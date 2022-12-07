@@ -1,0 +1,5 @@
+*.csv
+*.txt
+__pycache__/
+.vscode/
+*.py[cod]
