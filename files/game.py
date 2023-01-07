@@ -15,7 +15,6 @@ class Game:
         self.turn = self.board.turn
         self.num_of_moves = 0
         self.win = win
-        self.list_of_pieces = [0 for i in range(ROWS*COLS)]
 
         self.history = deque()
         # The move that was just made so it can be drawn on the board
@@ -24,8 +23,7 @@ class Game:
 
         self.whitePieces = self.get_pieces(white_piece)
         self.blackPieces = self.get_pieces(black_piece)
-        for piece in self.whitePieces + self.blackPieces:
-            self.list_of_pieces[piece.position] = piece
+
         # List of all possible moves ((originX, originY), (destX, destY))
         self.move_list = []
 
@@ -167,7 +165,11 @@ class Game:
                                     break
                             else:
                                 if king_found:
-                                    break
+                                    if dest.color == self.turn:
+                                        break
+                                    else:
+                                        tMap[n_pos] = 1
+                                        break
                                 tMap[n_pos] = 1
                                 if dest.type == king and dest.color == self.turn:
                                     checkers.append(piece)
@@ -197,8 +199,6 @@ class Game:
                             break
                         dest = self.get_piece_from_pos(n_pos)
                         if dest != 0:
-                            if king_found:
-                                break
                             if pot_pin:
                                 if dest.type == king and dest.color == self.turn:
                                     pot_pin.pinned = True
@@ -207,7 +207,11 @@ class Game:
                                     break
                             else:
                                 if king_found:
-                                    break
+                                    if dest.color == self.turn:
+                                        break
+                                    else:
+                                        tMap[n_pos] = 1
+                                        break
                                 tMap[n_pos] = 1
                                 if dest.type == king and dest.color == self.turn:
                                     checkers.append(piece)
@@ -628,32 +632,30 @@ class Game:
     def draw_squares(self):
         self.board.draw_squares(self.win)
                 
-    def move(self, origin, dest, AI=True, generate=False):
+    def move(self, origin, dest, AI=True, generate=False, move=None):
         '''Method to move from origin to dest'''
-        for move in self.move_list:
-            if move.get_origin() == origin  and move.get_dest() == dest:
-                o_piece = self.get_piece(origin)
-                self.move_nmw(move) 
-                if move.get_promotion():
-                    if AI:
-                        self.promote(move, o_piece, AI)
-                    else:
-                        self.promote(move, o_piece, AI)
-                self.updateThreatMap()
-                if generate:
-                    if self.check != 0:
-                        self.generate_all_moves()
-                        self.find_winner()
-                else:
+        if move:
+            origin = move.get_origin()
+            dest = move.get_dest()
+        else:
+            for mv in self.move_list:
+                if mv.get_origin() == origin and mv.get_dest() == dest:
+                    move = mv
+                    break 
+        if move:
+            o_piece = self.get_piece(origin)
+            self.move_nmw(move) 
+            if move.get_promotion():
+                self.promote(move, o_piece, AI)
+            self.updateThreatMap()
+            if generate:
+                if self.check != 0:
                     self.generate_all_moves()
                     self.find_winner()
-                    self.reset_pins()
-                # if generate:
-                #     if self.check != 0:
-                #         self.generate_all_moves()
-                #     else:
-                #         self.generate_all_moves(generate)
-                break
+            else:
+                self.generate_all_moves()
+                self.find_winner()
+                self.reset_pins()
     
     def promote(self, move, o_piece, AI):
         """Method to make a promoting move. If AI is False, it is a human move so options will pop up to choose
@@ -759,7 +761,6 @@ class Game:
         self.p_move = (origin, dest)
         self.num_of_moves += 1
 
-        self.update_list_of_pieces()
         self.change_turn()
 
     def unmove(self):
@@ -801,14 +802,6 @@ class Game:
                 else:
                     self.blackPieces.append(cap_piece)
 
-
-            # if p_piece != 0:
-            #     if p_piece.type == pawn:
-            #         oX, oY = origin
-            #         dX, dY = dest
-            #         if oY == dY and abs(dX - oX) == 2:
-            #             p_piece.en_passant = False
-
             # If en passant capture was made
             if enPassantPiece != 0:
                 if enPassantPiece.color == white_piece:
@@ -827,14 +820,7 @@ class Game:
                     self.blackPieces[index] = reverse
                 self.board.board[origin[0]][origin[1]] = reverse
 
-            self.update_list_of_pieces()
             self.reset_pins()
-
-    def update_list_of_pieces(self):
-        '''Method to update the piece list that we have'''
-        self.list_of_pieces = []
-        for row in self.board.board:
-            self.list_of_pieces += row
 
     def change_turn(self):
         '''Method to change turn'''
@@ -985,7 +971,9 @@ class Game:
 
     def get_piece_from_pos(self, pos):
         if -1 < pos < 64:
-            return self.list_of_pieces[pos]
+            col = pos % 8
+            row = pos // 8
+            return self.get_piece((row, col))
         else:
             return None
 
@@ -1038,7 +1026,7 @@ class Game:
     def to_str(self):
         '''Method to print the game (board, king locations, and if there is a check'''
         result = ""
-        result += repr(self.board) + "\n"
+        result += repr(self.board)
         result += "White King location: "
         if self.board.whiteKingLocation == None:
             result += "Not available\n"
@@ -1061,5 +1049,5 @@ class Game:
             result += "White to play"
         else:
             result += "Black to play"
-        return result
-
+        return result +"\n"
+ 

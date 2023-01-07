@@ -16,8 +16,8 @@ class Board:
         turn = strings[1]
         castle = strings[2]
         enpassant = strings[3]
-        halfmoves = strings[4]
-        fullmoves = strings[5]
+        # halfmoves = strings[4]
+        # fullmoves = strings[5]
 
         # Keep track of king locations
         self.whiteKingLocation = None
@@ -198,7 +198,7 @@ class Board:
         if pos[0] < 0 or pos[1] < 0 or pos[0] > 7 or pos[1] > 7:
             return None
         return self.board[pos[0]][pos[1]]
-
+    
     def __repr__(self) -> str:
         "Method to print out the board"
         board = ''
@@ -213,4 +213,4 @@ class Board:
                     board += ' '
             board += '\n'
 
-        return board
+        return board + "\n"

@@ -45,9 +45,8 @@ def main():
     clock = pygame.time.Clock()
 
     # Create board
-    game = Game(start_pos_fen, WIN) 
-    # game = Game("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1", WIN) 
-    #game.board.draw_squares(WIN)
+    # game = Game(start_pos_fen, WIN) 
+    game = Game("r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1", WIN) 
     piece_pos = None
 
     while run:
@@ -76,12 +75,16 @@ def main():
                     piece_pos = None
 
             if event.type == pygame.KEYDOWN:
+                # unmove
                 if event.key == pygame.K_LEFT:
                     game.unmove()
+                # print game
                 elif event.key == pygame.K_RIGHT:
                     print(game)
+                # print fen string
                 elif event.key == pygame.K_DOWN:
                     print(board_to_fen(game.board.board))
+                # print Attack map
                 elif event.key == pygame.K_UP:
                     prev = 0
                     print("White Threat Map")
@@ -93,12 +96,16 @@ def main():
                     for row in range(ROWS):
                         print(game.blackThreatMap[prev:prev+8])
                         prev += 8
+                # print board
                 elif event.key == pygame.K_a:
                     prev = 0
                     for row in range(ROWS):
                         next = prev+8
                         print(game.list_of_pieces[prev:next])
                         prev = next
+                elif event.key == pygame.K_m:
+                    for move in game.move_list:
+                        print("origin:", move.get_origin(),", dest:", move.get_dest(),", promotion:", move.get_promotion(),", en_passant:", move.get_enpassant(),", castle:", move.get_castle())
     pygame.quit()
 
 

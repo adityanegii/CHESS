@@ -1,26 +1,23 @@
-import cProfile
-import pygame
 from files.FEN import board_to_fen
 from files.game import Game
+from files.fen_strings import *
 from misc.constants import *
 from misc.miscellaneous import rowColToStdPositions
-from files.fen_strings import *
+from misc.TempGame import TempGame
+
+import pygame
+import cProfile
 import time
 import pandas as pd
 import csv
 
 WIN = None
-DEPTH = 4
+DEPTH = 5
 
-f = open(r"test/checks.txt", "w")
-# FPS = 60
-# WIN = pygame.display.set_mode((WIDTH, HEIGHT))
-# pygame.display.set_caption('CHESS')
+POS_FILE = r"test/positions.txt"
+POS_SPEC_FILE = r"test/pos_spec.txt"
 
-# pygame.font.init()
-# font = pygame.font.SysFont('Comic Sans MS', 60)
-
-def MoveGenerationTest(game, depth, og_depth=0):
+def MoveGenerationTest(game, depth):
     '''Function to check how many possible positions there are'''
     if depth == 0:
         return 1, 0, 0, 0, 0, 0, 0
@@ -31,14 +28,16 @@ def MoveGenerationTest(game, depth, og_depth=0):
     enpassant = 0
     checkmates = 0
     promotions = 0
-    temp = 0
-    moves = game.move_list
+    moves = game.move_list 
+    
     for move in moves:
+        if move.get_promotion() and game.turn == 1:
+            pass
         origin, dest = move.get_origin(), move.get_dest()
         
         o_piece = game.get_piece(origin)
         d_piece = game.get_piece(dest)
-        
+
         if depth == 1:
             if o_piece != 0:
                 if o_piece.type == king:
@@ -55,21 +54,18 @@ def MoveGenerationTest(game, depth, og_depth=0):
                         enpassant += 1
                     if move.get_promotion():
                         promotions += 1
-            game.move(origin, dest, generate=True)
+            game.move(origin, dest, generate=True, move=move)
 
-            if game.check != 0:
+            if game.check != 0: 
                 checks += 1
-                f.write((board_to_fen(game.board.board) + " " + str(game.check) + '\n'))
+                # pos.write(board_to_fen(game.board.board))
                 if game.winner:
                     if game.winner != 0:
+                        # sp.write(board_to_fen(game.board.board))
                         checkmates+=1    
         
         else:
-            game.move(origin, dest)
-        
-        # game.draw()
-        # pygame.display.update()
-        # time.sleep(0.175)
+            game.move(origin, dest, move=move)
         
         result = MoveGenerationTest(game, depth-1)
         positions += result[0]
@@ -80,10 +76,6 @@ def MoveGenerationTest(game, depth, og_depth=0):
         checks += result[3]
         checkmates += result[5]
         game.unmove()
-        if depth == og_depth:
-            print(rowColToStdPositions(origin),
-                  rowColToStdPositions(dest), positions-temp)
-            temp = positions
 
     return positions, captures, castles, checks, enpassant, checkmates, promotions
 
@@ -94,14 +86,15 @@ def test():
     run = True
 
     # Create board
-    game = Game(start_pos_fen, WIN)
-    # game = Game("r3k2r/p1ppqpb1/bn1Ppnp1/4N3/1p2P3/2N2Q2/PPPBBPpP/R2K3R b kq - 1 2", WIN)
+    # game = Game(start_pos_fen, WIN)
+    game = Game("r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1", WIN)
 
     while run:
 
         game.generate_all_moves()
         print(game)
-        for i in range(0, DEPTH+1):
+        for i in range(3, 4):
+        # for i in range(0, DEPTH+1):
             print("Depth ", i, " ", end=" ")
             start = time.time()
             positions, captures, castles, checks, enpassant, checkmates, promotions = MoveGenerationTest(game, i)
@@ -114,7 +107,6 @@ def test():
 
 def rigourous_test():
     pos_num,depth,positions,captures,castles,checks,enpassant,checkmates,promotions = "pos_num","depth","positions","captures","castles","checks","enpassant","checkmates","promotions"
-    values = [positions,captures,castles,checks,enpassant,checkmates,promotions]
     perft = pd.read_csv("test\short_perft_test.csv")
     pos = []
     for i, row in perft.iterrows():
@@ -144,16 +136,25 @@ def rigourous_test():
     
     output.close()
 
-# test()
-rigourous_test()
+if __name__ == "__main__":
+    inp = input("Test type: ")
 
-f.close()
+    if inp == "n":
+        # pos = open(POS_FILE, "w")
+        # sp = open(POS_SPEC_FILE, "w")
+        test()
+        # sp.close()
+        # pos.close()
 
-# if __name__ == "__main__":
+    if inp == "r":
+        rigourous_test()
 
-#     pr = cProfile.Profile()
-#     pr.enable()
+    if inp == "t":
+        pr = cProfile.Profile()
+        pr.enable()
 
-#     rigourous_test()
-#     pr.disable()
-#     pr.print_stats(sort='cumtime')
+        # rigourous_test()
+        test()
+        pr.disable()
+        pr.print_stats(sort='cumtime')
+

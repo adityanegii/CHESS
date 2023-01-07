@@ -30,3 +30,6 @@ class Move:
             return True
         else:
             return False
+
+    def __repr__(self)->str:
+        return "origin:", self.get_origin(),", dest:", self.get_dest(),", promotion:", self.get_promotion(),", en_passant:", self.get_enpassant(),", castle:", self.get_castle()

@@ -71,11 +71,11 @@ def check_blocker_move(a_row, a_col, k_row, k_col, d_pos):
     else:
         # Right check
         if a_row == k_row:
-            if d_col in range(k_col, a_col) and d_row == k_row:
+            if d_col in range(k_col+1, a_col) and d_row == k_row:
                 return True
         # Down check
         elif a_col == k_col:
-            if d_row in range(k_row, a_row) and d_col == k_col:
+            if d_row in range(k_row+1, a_row) and d_col == k_col:
                 return True
         # Bottom left check
         elif abs(a_row - k_row) == abs(a_col - k_col) and a_col < k_col:
@@ -89,30 +89,55 @@ def check_blocker_move(a_row, a_col, k_row, k_col, d_pos):
 
 def validate_en_passant(pRow, pCol, cap_piece_pos, kRow, kCol, game):
     '''Function to validate en passant moves. Returns True if the move is valid, False otherwise.'''
+    # pS = []     # list of pieces on that particular row between the king and the rook/queen of there is one
+    # if pRow == kRow:
+    #     if pCol < kCol:
+    #         for i in range(1, pCol + 1):
+    #             nCol = pCol - i
+    #             piece = game.get_piece((pRow, nCol))
+    #             if piece != 0:
+    #                 pS.append(piece)
+    #                 if piece.type == pawn and pRow * 8 + nCol == cap_piece_pos:
+    #                     continue
+    #                 elif piece.type != rook and piece.type != queen:
+    #                     return True
+    #                 else:
+    #                     return False
+    #     else:
+    #         for i in range(1, ROWS-pCol+1):
+    #             nCol = pCol + i
+    #             piece = game.get_piece((pRow, nCol))
+    #             if piece!= 0:
+    #                 if piece.type == pawn and pRow * 8 + nCol == cap_piece_pos:
+    #                     continue
+    #                 elif piece.type != rook and piece.type != queen:
+    #                     return True
+    #                 else:
+    #                     return False
+    # return True
     if pRow == kRow:
+        found = 0
         if pCol < kCol:
-            for i in range(1, pCol + 1):
-                nCol = pCol - i
-                piece = game.get_piece((pRow, nCol))
-                if piece != 0:
-                    if piece.type == pawn and pRow * 8 + nCol == cap_piece_pos:
-                        continue
-                    elif piece.type != rook and piece.type != queen:
-                        return True
-                    else:
+            for i in range(1, kCol + 1):
+                nCol = kCol - i
+                p = game.get_piece((pRow, nCol))
+                if p != 0:
+                    found += 1
+                    if (p.type == rook or p.type == queen) and p.color != game.turn and found == 3:
                         return False
+                if found == 3:
+                    break
         else:
-            for i in range(1, ROWS-pCol+1):
+            for i in range(kCol, COLS):
                 nCol = pCol + i
-                piece = game.get_piece((pRow, nCol))
-                if piece!= 0:
-                    if piece.type == pawn and pRow * 8 + nCol == cap_piece_pos:
-                        continue
-                    elif piece.type != rook and piece.type != queen:
-                        return True
-                    else:
+                p = game.get_piece((pRow, nCol))
+                if p != 0:
+                    found += 1
+                    if (p.type == rook or p.type == queen) and p.color != game.turn and found == 3:
                         return False
-    return True
+                if found == 3:
+                    break
+    return True    
 
 def MoveGenerator(game):
     '''This function generates all the moves according to the attack maps for the color that is moving.
@@ -174,14 +199,6 @@ def MoveGenerator(game):
         enpd1 = None
         enpd2 = None
 
-        # Find en passant moves
-        # if piece.col < 7:
-        #     enp_piece1 = game.get_piece_from_pos(piece.row*8+piece.col + 1)
-        #     if enp_piece1 != 0:
-        #         if enp_piece1.color != piece.color and enp_piece1.type == pawn:
-        #             if enp_piece1.en_passant == True:
-        #                 enp1 = (piece.row+piece.color)*8+piece.col+1
-
         if piece.col < 7 and ((piece.row == 4 and piece.color == black_piece) or (piece.row == 3 and piece.color == white_piece)):
             enp_piece1 = game.get_piece_from_pos(piece.row*8+piece.col+1)
             if enp_piece1 != 0:
@@ -201,13 +218,6 @@ def MoveGenerator(game):
                     pDx, pDy = pD
                     if pDy == pOy and abs(pOx - pDx) == 2 and pD == (enp_piece2.row, enp_piece2.col):
                         enp1 = (piece.row+piece.color)*8+piece.col-1   
-
-        # if piece.col > 0:
-        #     enp_piece2 = game.get_piece_from_pos(piece.row*8+piece.col - 1)
-        #     if enp_piece2 != 0:
-        #         if enp_piece2.color != piece.color and enp_piece2.type == pawn:
-        #             if enp_piece2.en_passant == True:
-        #                 enp2 = (piece.row+piece.color)*8+piece.col - 1
 
         if piece.col < 7:
             cap2 = game.get_piece_from_pos(m3)
@@ -262,6 +272,8 @@ def MoveGenerator(game):
                                     move_list.append(new_move[0])
                                 elif check_blocker_move(a_row, a_col, k_row, k_col, move):
                                     move_list.append(new_move[0])
+                                elif move in (enp1, enp2) and attacker.type == pawn:
+                                    move_list.append(new_move[0])
                             if case == 3:
                                 if dest == attacker:
                                     move_list.append(new_move[0])
@@ -306,6 +318,7 @@ def MoveGenerator(game):
                     elif case == 3:
                         if dest == attacker:
                             move_list.append(Move((piece.row, piece.col), (x, y)))
+                            
     def diag_sliding_moves(piece, case):
         pos = piece.position
         start_rem = pos % 8
@@ -373,19 +386,19 @@ def MoveGenerator(game):
                             if dest.color != piece.color:
                                 break
                     elif case == 2:
-                        if dest == attacker:
-                            move_list.append(Move((piece.row, piece.col), pos_getter[n_pos]))
-                            if dest != 0:
-                                if dest.color != piece.color:
-                                    break
-                        elif check_blocker_move(a_row, a_col, k_row, k_col, n_pos):
-                            move_list.append(Move((piece.row, piece.col), pos_getter[n_pos]))
+                        if dest == 0:
+                            if check_blocker_move(a_row, a_col, k_row, k_col, n_pos):
+                                move_list.append(Move((piece.row, piece.col), pos_getter[n_pos]))
+                        else:
+                            if dest == attacker:
+                                move_list.append(Move((piece.row, piece.col), pos_getter[n_pos]))
+                            break
                     elif case == 3:
                         if dest == attacker:
                             move_list.append(Move((piece.row, piece.col), pos_getter[n_pos]))
-                            if dest != 0:
-                                if dest.color != piece.color:
-                                    break
+                            # if dest != 0:
+                            #     if dest.color != piece.color:
+                            #         break
     def king_moves(piece):
         if piece.type == king:
             pos = piece.position
@@ -394,7 +407,7 @@ def MoveGenerator(game):
                 for i in range(1, 2):
                     n_pos = pos + direction * i
                     n_rem = n_pos % 8
-                    if n_pos not in range(1, 64):
+                    if n_pos not in range(0, 64):
                         break
                     if n_rem > start_rem and direction == -1:
                         break

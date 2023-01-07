@@ -85,4 +85,4 @@ def board_to_fen(board):
         else:
             fen_string += "/"
 
-    return fen_string[:-1]
+    return fen_string[:-1] + '\n'

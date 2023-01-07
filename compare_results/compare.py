@@ -3,11 +3,7 @@ def arrange_stock(file=r"compare_results\stock_out.txt"):
     output = []
     with open(file, "r") as f:
         for line in f.readlines():
-            temp = line.replace(":", "")
-            temp = list(temp)
-            temp.insert(2, " ")
-            temp = "".join(temp).strip()
-            output.append(temp)
+            output.append(line.strip())
     
     return output
 
@@ -22,11 +18,14 @@ def main():
 
         for line in output1:
             for line2 in output2:
-                if line[:5] ==  line2[:5]:
-                    if int(line[-2:]) != int(line2[-2:]):
-                        print("My output ", line)
+                l1_move, l1_num = line.split(" ")
+                l2_move, l2_num = line2.split(" ")
+                if l1_move ==  l2_move:
+                    if int(l1_num) != int(l2_num):
+                        print("My output    ", line)
                         print("Stock output ", line2)
+                        print("-----")
+
 
     
-
 main()
